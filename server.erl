@@ -24,4 +24,3 @@ serverEstablished(Client, ServerSeq, ClientSeq, CollectedData, NumPackets) ->
             % Go back to the main loop
             serverEstablished(Client, ServerSeq, ClientSeq + length(Data), CollectedData ++ Data, NumPackets + 1)
     end.
-

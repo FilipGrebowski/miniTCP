@@ -5,7 +5,6 @@
 increment(X) ->
 	X + 1.
 
-
 serverStart() -> 
     receive
         {Client, {syn, ServerSeq, ClientSeq}} -> 
@@ -22,7 +21,6 @@ serverStart() ->
 		    end
 		end
     end.
-
 
 clientStart(Server, String) ->
 	ClientSeq = 0,
@@ -41,19 +39,17 @@ clientStart(Server, [], IncClientSeq, IncServerSeq) ->
 	io:fwrite("Client done.~n");
 
 clientStart(Server, String, IncClientSeq, IncServerSeq) ->
-	if (length(String) > 7) ->
-		Server ! {self(), {ack, IncClientSeq, IncServerSeq, string:sub_string(String, 1, 7)}},
+	if (length(String) == 0) ->
+		String = [],
+		clientStart(Server, [], IncClientSeq, IncServerSeq);
+	true ->
+		Substring = string:sub_string(String, 1, 7),
+		RestOfString = string:sub_string(String, (length(Substring) + 1)),
+		Server ! {self(), {ack, IncClientSeq, IncServerSeq, Substring}},
 		receive
 			{Server, {ack, IncServerSeq, NewClientSeq}} ->
-				clientStart(Server, string:sub_string(String, 8), NewClientSeq, IncServerSeq)
-		end;
-	true ->
-		clientStart(Server, [], IncClientSeq, IncServerSeq)
+					clientStart(Server, RestOfString, NewClientSeq, IncServerSeq)
+		end
 	end.
-
-
-
-
-
 
 
