@@ -4,7 +4,6 @@
 -spec serverEstablished(pid(), integer(), integer(), string(), integer()) -> integer().
 
 serverEstablished(Client, ServerSeq, ClientSeq, CollectedData, NumPackets) ->
-	io:fwrite("You reached the function.~n"),
     receive
         {Client, {fin, ClientSeq, ServerSeq}} ->
             % received a 'fin' packet
@@ -19,7 +18,6 @@ serverEstablished(Client, ServerSeq, ClientSeq, CollectedData, NumPackets) ->
             ServerSeq;
 
         {Client, {ack, ClientSeq, ServerSeq, Data}} ->
-        	f:write("KEEP GOING FILIP YOU ARE THE FUCKING BEST!"),
             % Received an 'ack' packet with data
             Client ! {self(), {ack, ServerSeq, ClientSeq + length(Data)}},
             % Send an 'ack' packet (no data)

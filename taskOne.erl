@@ -13,17 +13,16 @@ serverStart() ->
             Client ! {self(), {synack, ServerSeq, IncClientSeq}},
         receive
 	        {Client, {ack, IncServerSeq, IncClientSeq}} -> 
-	            io:fwrite("Second stage complete.~n"),
 	            server:serverEstablished(Client, IncServerSeq, IncClientSeq, "", 0),
+	            serverStart(),
 		    receive
 		    	{Client, {ack, IncServerSeq, IncClientSeq, String}} ->
-		        	io:fwrite("DID IT MATCH?~n"),
 		         	server:serverEstablished(Client, IncServerSeq, IncClientSeq, String, 0),
-		         	io:fwrite("Final stage complete.~n"),
 		         	serverStart()
 		    end
 		end
     end.
+
 
 clientStart(Server, String) ->
 	ClientSeq = 0,
@@ -33,22 +32,28 @@ clientStart(Server, String) ->
     	{Server, {synack, ServerSeq, IncClientSeq}} ->
     		IncServerSeq = increment(ServerSeq),
     		Server ! {self(), {ack, IncClientSeq, IncServerSeq}},
-    		io:fwrite("Sent Ack Message.~n"),
     		clientStart(Server, String, IncClientSeq, IncServerSeq)
     end.
 
 
 clientStart(Server, [], IncClientSeq, IncServerSeq) ->
-	io:fwrite("GOT ONTO SECOND PART HELLL YEAAAAA!!!!~n"),
 	Server ! {self(), {fin, IncClientSeq, IncServerSeq}},
 	io:fwrite("Client done.~n");
+
 clientStart(Server, String, IncClientSeq, IncServerSeq) ->
-	Server ! {self(), {ack, IncClientSeq, IncServerSeq, string:sub_string(String, 1, 7)}},
-	% io:fwrite(string:sub_string(String, 1, 7)),
-	io:fwrite("IS THIS WORKING?~n"),
-	io:format("Client: ~p, Server: ~p~n", [IncClientSeq, IncServerSeq]),
-	receive
-		{Server, {ack, NewClientSeq, IncServerSeq}} ->
-			clientStart(Server, string:sub_string(String, 8), NewClientSeq, IncServerSeq)
+	if (length(String) > 7) ->
+		Server ! {self(), {ack, IncClientSeq, IncServerSeq, string:sub_string(String, 1, 7)}},
+		receive
+			{Server, {ack, IncServerSeq, NewClientSeq}} ->
+				clientStart(Server, string:sub_string(String, 8), NewClientSeq, IncServerSeq)
+		end;
+	true ->
+		clientStart(Server, [], IncClientSeq, IncServerSeq)
 	end.
+
+
+
+
+
+
 
