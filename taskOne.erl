@@ -1,11 +1,11 @@
 -module(taskOne).
--export([serverStart/0, clientStart/2, clientStart/4, increment/1]).
+-export([serverStart/0, clientStart/2, clientStart/4, increment/1, testOne/0]).
 
 
-increment(X) ->
-	X + 1.
+increment(X) -> X + 1.
 
-serverStart() -> 
+serverStart() -> serverStart(0).
+serverStart(ServerSeq) -> 
     receive
         {Client, {syn, ServerSeq, ClientSeq}} -> 
         	IncClientSeq = increment(ClientSeq),
@@ -16,8 +16,7 @@ serverStart() ->
 	            serverStart(),
 		    receive
 		    	{Client, {ack, IncServerSeq, IncClientSeq, String}} ->
-		         	server:serverEstablished(Client, IncServerSeq, IncClientSeq, String, 0),
-		         	serverStart()
+		         	server:serverEstablished(Client, IncServerSeq, IncClientSeq, String, 0)
 		    end
 		end
     end.
@@ -51,5 +50,18 @@ clientStart(Server, String, IncClientSeq, IncServerSeq) ->
 					clientStart(Server, RestOfString, NewClientSeq, IncServerSeq)
 		end
 	end.
+
+% Questions 3:
+% The way the tcpMonitorStart forwards packets between the Server and the Client
+% is by checking the process id of the sender, making sure the connection has been acknowledged,
+% and then proceeding to sending the packet to the destination where that current
+% process id exists.
+
+% Question 4:
+testOne() ->
+  	Monitor = spawn(monitor, tcpMonitorStart, []),
+  	Server = spawn(taskOne, serverStart, []),
+  	Client = spawn(taskOne, clientStart, [Monitor, "Small piece of text"]),
+  	Monitor ! {Client, Server}.
 
 
